@@ -49,11 +49,8 @@ function Add-WEPSPrinter {
 
     begin {
         $driverNames =
-            if ($script:DriverConfigInfo -and $script:DriverConfigInfo.Drivers) {
+            if ($script:DriverConfigInfo.Drivers) {
                 $script:DriverConfigInfo.Drivers.Name
-            }
-            elseif ($script:DriverConfigInfo) {
-                $script:DriverConfigInfo.Name
             }
             else {
                 @()

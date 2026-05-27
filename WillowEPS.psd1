@@ -1,13 +1,19 @@
 @{
-    RootModule        = 'WillowEPS.psm1'
-    ModuleVersion     = '0.0.1'
-    GUID              = '804c6250-2448-4a1e-b1b9-bcb4fee64a43'
+    RootModule              = 'WillowEPS.psm1'
+    ModuleVersion           = '0.0.1'
+    GUID                    = '804c6250-2448-4a1e-b1b9-bcb4fee64a43'
 
-    Author            = 'David R. Figueroa II'
-    CompanyName       = 'Organization'
-    Copyright         = '(c) 2026 Author. All rights reserved.'
-    Description       = 'Manages print servers, including printer creation and configuration.'
-
+    Author                  = 'David R. Figueroa II'
+    CompanyName             = 'Organization'
+    Copyright               = '(c) 2026 Author. All rights reserved. Licensed under Apache License 2.0.'
+    Description             = 'Enterprise module for managing Willow EPS print infrastructure, including printer provisioning, port management, driver configuration, and audit logging.'
+    PowerShellVersion       = '5.1'
+    CompatiblePSEditions    = @('Desktop')
+    LicenseUri              = 'https://github.com/figueroadavid/WillowEPS/blob/main/LICENSE'
+    ProjectUri              = 'https://github.com/figueroadavid/WillowEPS'
+    
+    IconUri                 = 'https://raw.githubusercontent.com/figueroadavid/WillowEPS/data/printer.ico'
+    
     RequiredModules   = @(
         'PrintManagement'
     )
@@ -42,11 +48,17 @@
 
     PrivateData       = @{
         PSData = @{
-            Tags = @('printing', 'module', 'admin', 'audit')
+            Tags = @('printing', 'module', 'admin', 'audit', 'eps', 'infrastructure', 'automation', 'powershell')
             LicenseUri = ''
             ProjectUri = ''
             IconUri = ''
             ReleaseNotes = 'v0.0.1: Initial release with audit logging and configuration management functionality'
         }
     }
+    
+    FileList = @(
+        'WillowEPS.psm1',
+        'WillowEPS.psd1'
+    )
+
 }

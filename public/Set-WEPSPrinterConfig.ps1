@@ -58,6 +58,7 @@ function Set-WEPSPrinterConfig {
         [switch]$ShowProgress
     )
 
+    $CurrentCounter = 0
     foreach ($Printer in $PrinterName) {
         $CurrentCounter ++
         $thisPrinter = Get-Printer -Name $Printer
@@ -67,7 +68,7 @@ function Set-WEPSPrinterConfig {
 		}
         $thisDriver = Get-PrinterDriver -Name $thisPrinter.DriverName
         $thisDriverVersion = $thisDriver.DriverVersion
-        $ConfigFileLocation = $script:DriverConfigInfo |
+        $ConfigFileLocation = $script:DriverConfigInfo.Drivers |
 			Where-Object { $_.name -eq $thisDriver.Name -and $_.DriverVersion -eq $thisDriverVersion } |
 			Select-Object -ExpandProperty DATFilePath
 		if (-not $ConfigFileLocation) {
@@ -83,7 +84,7 @@ function Set-WEPSPrinterConfig {
                 $ProcStartInfo.CreateNoWindow = $true
                 $ProcStartInfo.Verb = 'RunAs'
                 $ProcStartInfo.UseShellExecute = $false
-               
+
                 $Process = [System.Diagnostics.Process]::new()
                 $Process.StartInfo = $ProcStartInfo
                 $process.Start()
@@ -99,7 +100,7 @@ function Set-WEPSPrinterConfig {
         $ProgParams = @{
             Activity         = 'Updating printers with correct DAT file'
             Status           = '[{0} of {1}]' -f $CurrentCounter, $PrinterName.Count
-            PercentComplete  = [math]::Round($CurrentCount / $PrinterName.Count / 100, 2)
+            PercentComplete  = [math]::Round($CurrentCounter / $PrinterName.Count / 100, 2)
             CurrentOperation = 'Updating {0}' -f $Printer.name
         }
         Write-Progress @ProgParams

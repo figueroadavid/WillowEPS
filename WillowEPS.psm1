@@ -2,35 +2,72 @@
 #Requires -RunAsAdministrator
 
 # --- Global Variables & Paths ---
-$script:ModuleSourcePath        = '<SOURCE_PATH>'
-$script:ModuleBase              = $PSScriptRoot
-$script:ModuleHelpDir           = [System.IO.Path]::Combine($script:ModuleBase, 'Help')
-$script:SourceDataDir           = [System.IO.Path]::Combine($script:ModuleSourcePath, 'Data')
-$script:SourceHelpDir           = [System.IO.Path]::Combine($script:ModuleSourcePath, 'Help')
+$script:ModuleSourcePath            = '<SOURCE_PATH>'
+$script:ModuleBase                  = $PSScriptRoot
+$script:ModuleHelpDir               = [System.IO.Path]::Combine($script:ModuleBase, 'Help')
+$script:SourceDataDir               = [System.IO.Path]::Combine($script:ModuleSourcePath, 'Data')
+$script:SourceHelpDir               = [System.IO.Path]::Combine($script:ModuleSourcePath, 'Help')
 
-$script:CRLF                    = [System.Environment]::NewLine
-$script:PrivateDirectory        = [System.IO.Path]::Combine($script:ModuleBase, 'Private')
-$script:PublicDirectory         = [System.IO.Path]::Combine($script:ModuleBase, 'Public')
-$script:DataDir                 = [System.IO.Path]::Combine($script:ModuleBase, 'Data')
+$script:CRLF                        = [System.Environment]::NewLine
+$script:PrivateDirectory            = [System.IO.Path]::Combine($script:ModuleBase, 'Private')
+$script:PublicDirectory             = [System.IO.Path]::Combine($script:ModuleBase, 'Public')
+$script:DataDir                     = [System.IO.Path]::Combine($script:ModuleBase, 'Data')
 
-$script:CacheRoot               = [System.IO.Path]::Combine($env:ProgramData, 'PrintModule')
-$script:CacheBase               = [System.IO.Path]::Combine($script:CacheRoot, 'Cache')
-$script:CacheDataDir            = [System.IO.Path]::Combine($script:CacheBase, 'Data')
-$script:CacheHelpDir            = [System.IO.Path]::Combine($script:CacheBase, 'Help')
-$script:DriverConfigInfo        = [System.IO.Path]::Combine($script:CacheDataDir, 'DriverConfigInfo.json')
-$script:DriverConfigInfoPath    = [System.IO.Path]::Combine($script:DataDir, 'DriverConfigInfo.json')
+$script:CacheRoot                   = [System.IO.Path]::Combine($env:ProgramData, 'PrintModule')
+$script:CacheBase                   = [System.IO.Path]::Combine($script:CacheRoot, 'Cache')
+$script:CacheDataDir                = [System.IO.Path]::Combine($script:CacheBase, 'Data')
+$script:CacheHelpDir                = [System.IO.Path]::Combine($script:CacheBase, 'Help')
+$script:DriverConfigInfoCachePath   = [System.IO.Path]::Combine($script:CacheDataDir, 'DriverConfigInfo.json')
+$script:DriverConfigInfoPath        = [System.IO.Path]::Combine($script:DataDir, 'DriverConfigInfo.json')
+$script:DriverConfigInfo            = $null
 
-$script:TargetServers = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-$script:TargetEnvironments = $null
+$script:ServerListData              = $null
+$script:AvailableEnvironments       = @()
+$script:ServerListDataPath          = [System.IO.Path]::Combine($script:DataDir, 'ServerList.json')
+
+$script:TargetServers               = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$script:TargetEnvironments          = $null
+
+# --- Argument Completers (Inline for brevity) ---
+$DriverNameCompleter = {
+    param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+    # Refresh cache if needed
+    $drivers = $script:DriverConfigInfo.Drivers.Name
+    $drivers | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+    }
+}
+
+$PrinterNameCompleter = {
+    param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+    try {
+        $printers = Get-Printer -ErrorAction Stop
+        $printers | Where-Object { [string]::IsNullOrEmpty($wordToComplete) -or $_.Name -like "*$wordToComplete*" } | Sort-Object Name | ForEach-Object {
+            [System.Management.Automation.CompletionResult]::new($_.Name, $_.Name, 'ParameterValue', $_.Name)
+        }
+    } catch { @() }
+}
+
+$EnvironmentNameCompleter = {
+    param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+
+    $environments = @($script:AvailableEnvironments)
+
+    $environments | Where-Object { [string]::IsNullOrEmpty($wordToComplete) -or $_ -like "$wordToComplete*" } |
+        ForEach-Object {
+            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+        }
+}
 
 # --- Initialization ---
 function Initialize-Module {
-    Write-Verbose "Initializing PrintModule Module..."
+    Write-Verbose "Initializing WillowEPS Module..."
     
     # Ensure Cache Directories Exist
+    New-WEPSDirectory -Path $script:CacheRoot
     New-WEPSDirectory -Path $script:CacheDataDir
     New-WEPSDirectory -Path $script:CacheHelpDir
-    New-WEPSDirectory -Path $script:CacheRoot
+    
 
     # Load Source Data (if available)
     if (Test-Path -LiteralPath $script:DriverConfigInfoPath) {
@@ -39,7 +76,7 @@ function Initialize-Module {
             $script:DriverConfigInfo = $raw | ConvertFrom-Json -ErrorAction Stop
             
             # Normalize structure (ensure Drivers array exists)
-            if (-not $script:DriverConfigInfo.PSObject.Properties.Name -contains 'Drivers') {
+            if (-not ($script:DriverConfigInfo.PSObject.Properties.Name -contains 'Drivers')) {
                 $script:DriverConfigInfo = [PSCustomObject]@{
                     Metadata = $null
                     Drivers = $script:DriverConfigInfo
@@ -54,7 +91,6 @@ function Initialize-Module {
     }
 
     # Load Server List
-    $script:ServerListDataPath = [System.IO.Path]::Combine($script:DataDir, 'ServerList.json')
     if (Test-Path -LiteralPath $script:ServerListDataPath) {
         try {
             $raw = Get-Content -LiteralPath $script:ServerListDataPath -Raw -ErrorAction Stop
@@ -72,9 +108,8 @@ function Initialize-Module {
     Initialize-ModuleAuditLog
 
     # Perform Cache Sync (Pull)
-    # Perform Cache Sync (Pull)
     $syncParams = @{
-        DriverConfigInfo    = $script:DriverConfigInfo.Drivers
+        DriverConfigInfo    = $script:DriverConfigInfo
         CacheDataDir        = $script:CacheDataDir
         CacheHelpDir        = $script:CacheHelpDir
         SourceDataDir       = $script:SourceDataDir
@@ -95,47 +130,17 @@ function Initialize-Module {
     # Register Argument Completers
     Register-ArgumentCompleter -CommandName 'Add-WEPSDriverConfig','Remove-WEPSDriverConfig','Update-WEPSDriverConfig' -ParameterName 'DriverName' -ScriptBlock $DriverNameCompleter
     Register-ArgumentCompleter -CommandName 'Add-WEPSPrinter','Export-WEPSPrinterConfigData','Remove-WEPSPrinter','Set-WEPSPrinterConfig' -ParameterName 'PrinterName' -ScriptBlock $PrinterNameCompleter
-    Register-ArgumentCompleter -CommandName 'Add-WEPSPrinter','Add-WEPSPrinterPort','Remove-WEPSPrinter','Remove-WEPSPrinterPort' -ParameterName 'Environments' -ScriptBlock $EnvironmentNameCompleter
+    Register-ArgumentCompleter -CommandName 'Add-WEPSPrinter','Remove-WEPSPrinter' -ParameterName 'Environments' -ScriptBlock $EnvironmentNameCompleter
 
-	# --- Argument Completers (Inline for brevity) ---
-	$DriverNameCompleter = {
-		param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
-		# Refresh cache if needed
-		$drivers = $script:DriverConfigInfo.Drivers.Name
-		$drivers | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
-			[System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-		}
-	}
-
-	$PrinterNameCompleter = {
-		param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
-		try {
-			$printers = Get-Printer -ErrorAction Stop
-			$printers | Where-Object { [string]::IsNullOrEmpty($wordToComplete) -or $_.Name -like "*$wordToComplete*" } | Sort-Object Name | ForEach-Object {
-				[System.Management.Automation.CompletionResult]::new($_.Name, $_.Name, 'ParameterValue', $_.Name)
-			}
-		} catch { @() }
-	}
-	
-	$EnvironmentNameCompleter = {
-		param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
-
-		$environments = @($script:AvailableEnvironments)
-
-		$environments | Where-Object { [string]::IsNullOrEmpty($wordToComplete) -or $_ -like "$wordToComplete*" } |
-			ForEach-Object {
-				[System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-			}
-	}
-	
+}	
 
 # --- Import Functions ---
 Get-ChildItem -Path $script:PrivateDirectory -File -Filter *.ps1 | 
-	Where-Object FullName -notmatch '\.tests\.ps1$' | 
-	ForEach-Object { . $_.FullName }
+    Where-Object FullName -notmatch '\.tests\.ps1$' | 
+    ForEach-Object { . $_.FullName }
 Get-ChildItem -Path $script:PublicDirectory -File -Filter *.ps1 | 
-	Where-Object FullName -notmatch '\.tests\.ps1$' | 
-	ForEach-Object { . $_.FullName }
+    Where-Object FullName -notmatch '\.tests\.ps1$' | 
+    ForEach-Object { . $_.FullName }
 
 # --- Run Initialization ---
 Initialize-Module

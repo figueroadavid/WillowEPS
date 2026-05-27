@@ -60,7 +60,7 @@ function Add-WEPSDriverConfig {
         $errorMessage = $null
 
         try {
-            if ($script:DriverConfigInfo.Name -contains $DriverName) {
+            if ($script:DriverConfigInfo.Drivers.Name -contains $DriverName) {
                 Write-Warning -Message ('Local cache already contains a driver named {0}; this could result in a duplicate entry' -f $DriverName)
 
                 foreach ($Config in $script:DriverConfigInfo) {
@@ -84,8 +84,8 @@ function Add-WEPSDriverConfig {
                 SHA256        = (Get-FileHash -Path $DatFilePath -Algorithm SHA256).Hash
             }
 
-            $script:DriverConfigInfo += $NewEntry
-            $script:DriverConfigInfo = $script:DriverConfigInfo | Sort-Object -Property Name
+            $script:DriverConfigInfo.Drivers += $NewEntry
+            $script:DriverConfigInfo.Drivers = $script:DriverConfigInfo.Drivers | Sort-Object -Property Name
 
             $currentHash = (Get-FileHash -LiteralPath $LocalCachePath -Algorithm SHA256).Hash
             $newMetadata = [PSCustomObject]@{

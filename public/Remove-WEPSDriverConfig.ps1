@@ -42,11 +42,11 @@ function Remove-WEPSDriverConfig {
     process {
         # Filter logic
         if ($DriverVersion) {
-            $return = $script:DriverConfigInfo | Where-Object { -not ($_.DriverVersion -eq $DriverVersion -and $_.Name -match $DriverName ) }
-            [array]$MatchingDrivers = $script:DriverConfigInfo | Where-Object { $_.DriverVersion -eq $DriverVersion -and $_.Name -match $DriverName }
+            $return = $script:DriverConfigInfo.Drivers | Where-Object { -not ($_.DriverVersion -eq $DriverVersion -and $_.Name -match $DriverName ) }
+            [array]$MatchingDrivers = $script:DriverConfigInfo.Drivers | Where-Object { $_.DriverVersion -eq $DriverVersion -and $_.Name -match $DriverName }
         } else {
-            $return = $script:DriverConfigInfo | Where-Object Name -notmatch $DriverName
-            [array]$MatchingDrivers = $script:DriverConfigInfo | Where-Object Name -match $DriverName
+            $return = $script:DriverConfigInfo.Drivers | Where-Object Name -notmatch $DriverName
+            [array]$MatchingDrivers = $script:DriverConfigInfo.Drivers | Where-Object Name -match $DriverName
         }
 
         if ($MatchingDrivers.Count -eq 0) {

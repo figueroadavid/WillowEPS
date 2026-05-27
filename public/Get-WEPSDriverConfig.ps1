@@ -20,18 +20,18 @@ function Get-WEPSDriverConfig {
             {
                 "Name": "Generic PCL Driver",
                 "DriverVersion": 100000000000000,
-                "FilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Driver1.dat"
+                "DATFilePAth": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Driver1.dat"
             },
             {
                 "Name": "Generic Universal Print Driver",
                 "DriverVersion": 300000000000000,
-                "FilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Driver3.dat"
+                "DATFilePAth": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Driver3.dat"
             }
         ]
     .EXAMPLE
         PS C:\>Get-WEPSDriverConfig -Name Generic -Verbose
 
-        Name                         DriverVersion     FilePath
+        Name                         DriverVersion     DATFilePAth
         ----                         -------------     --------
         Generic Universal Print Driver 300000000000000 C:\ProgramData\WillowEPS\Cache\Data\Driver3.dat
     .EXAMPLE
@@ -40,13 +40,13 @@ function Get-WEPSDriverConfig {
     .EXAMPLE
         PS C:\>Get-WEPSDriverConfig -Name 'Generic Universal Print Driver' -Verbose
 
-        Name                         DriverVersion     FilePath
+        Name                         DriverVersion     DATFilePAth
         ----                         -------------     --------
         Generic Universal Print Driver 300000000000000 C:\ProgramData\WillowEPS\Cache\Data\Driver3.dat
     .EXAMPLE
         PS C:\>Get-WEPSDriverConfig -Name 'Generic Universal Print Driver' -Verbose -UsePreciseMatching
 
-        Name                         DriverVersion     FilePath
+        Name                         DriverVersion     DATFilePAth
         ----                         -------------     --------
         Generic Universal Print Driver 300000000000000 C:\ProgramData\WillowEPS\Cache\Data\Driver3.dat
     #>
@@ -72,10 +72,10 @@ function Get-WEPSDriverConfig {
             $script:DriverConfigInfo
         }
         elseif ($UsePreciseMatching) {
-            $script:DriverConfigInfo | Where-Object Name -match ('^{0}$' -f $NameRegEx)
+            $script:DriverConfigInfo.Drivers | Where-Object Name -match ('^{0}$' -f $NameRegEx)
         }
         else {
-            $script:DriverConfigInfo | Where-Object Name -like "*$Name*"
+            $script:DriverConfigInfo.Drivers | Where-Object Name -like "*$Name*"
         }
     }
 }

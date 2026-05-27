@@ -88,9 +88,9 @@ function Update-WEPSDriverConfig {
                         throw 'No DatFilePath supplied, this is required for a new driver version'
                     }
                     $Config.DriverVersion = $DriverVersion
-                    $Config.FilePath = $DatFilePath
+                    $Config.DATFilePath = $DatFilePath
                 } elseif ($DatFilePath) {
-                    $Config.FilePath = $DatFilePath
+                    $Config.DATFilePath = $DatFilePath
                 }
             }
         }
