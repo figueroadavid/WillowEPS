@@ -1,0 +1,158 @@
+[
+  {
+    "SubKey": "",
+    "Name": "Default DevMode",
+    "Kind": 3,
+    "Data": "<BINARY_DATA_REDACTED>"
+  },
+  {
+    "SubKey": "DSDriver",
+    "Name": "printBinNames",
+    "Kind": 7,
+    "Data": [
+      "Auto",
+      "Tray 1",
+      "Tray 2",
+      "Tray 3",
+      "Manual Feed",
+      "Labels",
+      "Envelope",
+      "Standard",
+      "Custom Type"
+    ]
+  },
+  {
+    "SubKey": "DSDriver",
+    "Name": "printColor",
+    "Kind": 3,
+    "Data": "AA=="
+  },
+  {
+    "SubKey": "DSDriver",
+    "Name": "printMediaSupported",
+    "Kind": 7,
+    "Data": [
+      "Letter",
+      "Legal",
+      "A4",
+      "A3",
+      "Envelope",
+      "Postcard",
+      "Custom Size"
+    ]
+  },
+  {
+    "SubKey": "DSDriver",
+    "Name": "printMaxXExtent",
+    "Kind": 4,
+    "Data": 3000
+  },
+  {
+    "SubKey": "DSDriver",
+    "Name": "printMaxYExtent",
+    "Kind": 4,
+    "Data": 12000
+  },
+  {
+    "SubKey": "DSDriver",
+    "Name": "printMinXExtent",
+    "Kind": 4,
+    "Data": 800
+  },
+  {
+    "SubKey": "DSDriver",
+    "Name": "printMinYExtent",
+    "Kind": 4,
+    "Data": 900
+  },
+  {
+    "SubKey": "DSDriver",
+    "Name": "printRate",
+    "Kind": 4,
+    "Data": 50
+  },
+  {
+    "SubKey": "DSDriver",
+    "Name": "printPagesPerMinute",
+    "Kind": 4,
+    "Data": 50
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "xColor",
+    "Kind": 1,
+    "Data": "Monochrome"
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "xUPDCurrentModel",
+    "Kind": 1,
+    "Data": "Generic Model"
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "xCurrentProdUID",
+    "Kind": 1,
+    "Data": "GENERIC"
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "XrxDeviceSettings",
+    "Kind": 3,
+    "Data": "<BINARY_DATA_REDACTED>"
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "NamedSettingsSupported",
+    "Kind": 4,
+    "Data": 1
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "TrayFormTable",
+    "Kind": 7,
+    "Data": ""
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "TrayFormMapSize",
+    "Kind": 4,
+    "Data": 1
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "TrayFormMap",
+    "Kind": 3,
+    "Data": "AAAA"
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "TrayFormKeywordSize",
+    "Kind": 4,
+    "Data": 1
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "TrayFormKeyword",
+    "Kind": 3,
+    "Data": "AA=="
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "FontCart",
+    "Kind": 7,
+    "Data": ""
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "AdminDevDefaults",
+    "Kind": 3,
+    "Data": "<BINARY_DATA_REDACTED>"
+  },
+  {
+    "SubKey": "PrinterDriverData",
+    "Name": "AdminDocDefaults",
+    "Kind": 3,
+    "Data": "<BINARY_DATA_REDACTED>"
+  }
+]

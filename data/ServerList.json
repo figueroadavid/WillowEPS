@@ -1,0 +1,43 @@
+{
+  "PRD": {
+    "Servers": [
+      "PRINT-PRD-01",
+      "PRINT-PRD-02"
+    ],
+    "Account": "svcPrintPrd"
+  },
+  "SUP": {
+    "Servers": [
+      "PRINT-SUP-01",
+      "PRINT-SUP-02"
+    ],
+    "Account": "svcPrintSup"
+  },
+  "TST": {
+    "Servers": [
+      "PRINT-TST-01",
+      "PRINT-TST-02"
+    ],
+    "Account": "svcPrintTst"
+  },
+  "REL": {
+    "Servers": [
+      "PRINT-REL-01",
+      "PRINT-REL-02"
+    ],
+    "Account": "svcPrintRel"
+  },
+  "TRN": {
+    "Servers": [
+      "PRINT-TRN-01",
+      "PRINT-TRN-02"
+    ],
+    "Account": "svcPrintTrn"
+  },
+  "POC": {
+    "Servers": [
+      "PRINT-POC-01"
+    ],
+    "Account": "svcPrintPoc"
+  }
+}
