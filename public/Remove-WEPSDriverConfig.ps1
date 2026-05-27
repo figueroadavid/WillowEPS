@@ -14,106 +14,193 @@ function Remove-WEPSDriverConfig {
         If specified, attempts to copy the updated local cache back to the source
         network share after a successful local update.
     #>
-    [cmdletbinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string]$DriverName,
 
-        [parameter(ValueFromPipelineByPropertyName)]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [int64]$DriverVersion,
 
         [switch]$PushToSource
     )
 
     begin {
-        $LocalCachePath = $script:DriverConfigInfo
-        $SourcePath = $script:DriverConfigInfoPath
-        
-        # Backup local cache
-        $BackupPath = '{0}.{1}.bak' -f $LocalCachePath, ([datetime]::Now.ToString('yyyyMMddHHmmss'))
-        try {
-            Copy-Item -Path $LocalCachePath -Destination $BackupPath -Force -ErrorAction Stop
-            Write-Verbose "Backup of local cache created at $BackupPath"
-        } catch {
-            throw "Failed to create local cache backup: $_; aborting operation."
+        $LocalCachePath = $script:DriverConfigInfoCachePath
+        $SourcePath     = $script:DriverConfigInfoPath
+
+        if (-not (Test-Path -LiteralPath $LocalCachePath)) {
+            throw "Local cache not found at '$LocalCachePath'."
         }
+
+        if (-not ($script:DriverConfigInfo.PSObject.Properties.Name -contains 'Drivers')) {
+            throw 'Driver configuration data is not in the expected wrapper format.'
+        }
+
+        $BackupCreated = $false
+        $BackupPath    = $null
     }
 
     process {
-        # Filter logic
-        if ($DriverVersion) {
-            $return = $script:DriverConfigInfo.Drivers | Where-Object { -not ($_.DriverVersion -eq $DriverVersion -and $_.Name -match $DriverName ) }
-            [array]$MatchingDrivers = $script:DriverConfigInfo.Drivers | Where-Object { $_.DriverVersion -eq $DriverVersion -and $_.Name -match $DriverName }
-        } else {
-            $return = $script:DriverConfigInfo.Drivers | Where-Object Name -notmatch $DriverName
-            [array]$MatchingDrivers = $script:DriverConfigInfo.Drivers | Where-Object Name -match $DriverName
+        $existingDrivers = @($script:DriverConfigInfo.Drivers)
+
+        $MatchingDrivers = if ($PSBoundParameters.ContainsKey('DriverVersion')) {
+            @(
+                $existingDrivers |
+                    Where-Object {
+                        $_.Name -eq $DriverName -and
+                        $_.DriverVersion -eq $DriverVersion
+                    }
+            )
+        }
+        else {
+            @(
+                $existingDrivers |
+                    Where-Object {
+                        $_.Name -eq $DriverName
+                    }
+            )
         }
 
         if ($MatchingDrivers.Count -eq 0) {
             throw "No matching driver found to remove."
         }
 
-        # Prepare output object
-        $driversArray = $return
-        $newMetadata = [PSCustomObject]@{
-            SchemaVersion = "2.0"
-            ModuleVersion = "0.0.1"
-            LastModified = (Get-Date -Format 'o')
-            ModifiedBy = "$($env:USERNAME)@$($env:USERDOMAIN)"
-            SourceHash = (Get-FileHash -LiteralPath $LocalCachePath -Algorithm SHA256).Hash
-            LastSyncedAt = (Get-Date -Format 'o')
-        }
-        $outputObj = [PSCustomObject]@{
-            Metadata = $newMetadata
-            Drivers = $driversArray
+        if (-not $BackupCreated) {
+            $BackupPath = '{0}.{1}.bak' -f $LocalCachePath, ([datetime]::Now.ToString('yyyyMMddHHmmss'))
+            try {
+                Copy-Item -LiteralPath $LocalCachePath -Destination $BackupPath -Force -ErrorAction Stop
+                Write-Verbose "Backup of local cache created at $BackupPath"
+                $BackupCreated = $true
+            }
+            catch {
+                throw "Failed to create local cache backup: $_; aborting operation."
+            }
         }
 
-        # Write to Local Cache (Atomic)
+        $WhatDescription = if ($PSBoundParameters.ContainsKey('DriverVersion')) {
+            "Remove driver '$DriverName' version '$DriverVersion'"
+        }
+        else {
+            "Remove driver '$DriverName'"
+        }
+
+        if (-not $PSCmdlet.ShouldProcess($DriverName, $WhatDescription)) {
+            return
+        }
+
+        $remainingDrivers = if ($PSBoundParameters.ContainsKey('DriverVersion')) {
+            @(
+                $existingDrivers |
+                    Where-Object {
+                        -not ($_.Name -eq $DriverName -and $_.DriverVersion -eq $DriverVersion)
+                    }
+            )
+        }
+        else {
+            @(
+                $existingDrivers |
+                    Where-Object {
+                        $_.Name -ne $DriverName
+                    }
+            )
+        }
+
+        $existingMetadata = if (
+            ($script:DriverConfigInfo.PSObject.Properties.Name -contains 'Metadata') -and
+            $script:DriverConfigInfo.Metadata
+        ) {
+            $script:DriverConfigInfo.Metadata
+        }
+        else {
+            $null
+        }
+
+        $preservedSourceHash = if ($existingMetadata -and $existingMetadata.SourceHash) {
+            $existingMetadata.SourceHash
+        }
+        else {
+            $null
+        }
+
+        $preservedLastSyncedAt = if ($existingMetadata -and $existingMetadata.LastSyncedAt) {
+            $existingMetadata.LastSyncedAt
+        }
+        else {
+            $null
+        }
+
+        $newMetadata = [PSCustomObject]@{
+            SchemaVersion = if ($existingMetadata -and $existingMetadata.SchemaVersion) { $existingMetadata.SchemaVersion } else { '2.0' }
+            ModuleVersion = if ($existingMetadata -and $existingMetadata.ModuleVersion) { $existingMetadata.ModuleVersion } else { '0.0.1' }
+            LastModified  = (Get-Date -Format 'o')
+            ModifiedBy    = "$($env:USERNAME)@$($env:USERDOMAIN)"
+            SourceHash    = $preservedSourceHash
+            LastSyncedAt  = $preservedLastSyncedAt
+        }
+
+        $outputObj = [PSCustomObject]@{
+            Metadata = $newMetadata
+            Drivers  = @($remainingDrivers)
+        }
+
         $tempPath = '{0}.{1}.tmp' -f $LocalCachePath, ([guid]::NewGuid().ToString('N'))
         try {
             $outputObj | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $tempPath -Force -ErrorAction Stop
             Move-Item -LiteralPath $tempPath -Destination $LocalCachePath -Force -ErrorAction Stop
             Write-Verbose "Successfully updated local cache at $LocalCachePath"
-        } catch {
+
+            $script:DriverConfigInfo = $outputObj
+        }
+        catch {
             throw "Failed to save updated local cache: $_; aborting operation."
         }
 
         Update-WEPSModuleDriverConfigInfo
 
-        # Handle Push to Source
         if ($PushToSource) {
-            if (Test-WEPSSourceIntegrity -CacheJsonPath $LocalCachePath -SourceJsonPath $SourcePath) {
-                Write-Verbose "Source integrity verified. Pushing to source..."
-                
-                $finalHash = (Get-FileHash -LiteralPath $LocalCachePath -Algorithm SHA256).Hash
-                $outputObj.Metadata.SourceHash = $finalHash
-                $outputObj.Metadata.LastSyncedAt = (Get-Date -Format 'o')
-                
-                $sourceTemp = '{0}.{1}.tmp' -f $SourcePath, ([guid]::NewGuid().ToString('N'))
-                try {
-                    $outputObj | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $sourceTemp -Force -ErrorAction Stop
-                    Move-Item -LiteralPath $sourceTemp -Destination $SourcePath -Force -ErrorAction Stop
-                    Write-Verbose "Successfully pushed updated configuration to source: $SourcePath"
-                    
-                    # Sync local cache again
-                    $outputObj | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $LocalCachePath -Force -ErrorAction Stop
-                    Update-WEPSModuleDriverConfigInfo
-                } catch {
-                    throw "Failed to push configuration to source: $_"
-                }
-            } else {
+            if (-not (Test-WEPSSourceIntegrity -CacheJsonPath $LocalCachePath -SourceJsonPath $SourcePath)) {
                 throw "Source integrity check failed. The source file has changed since the last load."
+            }
+
+            Write-Verbose "Source integrity verified. Pushing to source..."
+
+            $sourceTemp = '{0}.{1}.tmp' -f $SourcePath, ([guid]::NewGuid().ToString('N'))
+            try {
+                $outputObj | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $sourceTemp -Force -ErrorAction Stop
+                Move-Item -LiteralPath $sourceTemp -Destination $SourcePath -Force -ErrorAction Stop
+                Write-Verbose "Successfully pushed updated configuration to source: $SourcePath"
+
+                $finalHash = (Get-FileHash -LiteralPath $SourcePath -Algorithm SHA256).Hash.ToUpperInvariant()
+                $outputObj.Metadata.SourceHash   = $finalHash
+                $outputObj.Metadata.LastSyncedAt = (Get-Date -Format 'o')
+
+                $localTemp = '{0}.{1}.tmp' -f $LocalCachePath, ([guid]::NewGuid().ToString('N'))
+                $outputObj | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $localTemp -Force -ErrorAction Stop
+                Move-Item -LiteralPath $localTemp -Destination $LocalCachePath -Force -ErrorAction Stop
+
+                $script:DriverConfigInfo = $outputObj
+                Update-WEPSModuleDriverConfigInfo
+                Write-Verbose "Updated local cache metadata to match pushed state."
+            }
+            catch {
+                throw "Failed to push configuration to source: $_"
             }
         }
     }
 
     end {
-        # Cleanup old backups
-        $ParentPath = Split-Path -Path $LocalCachePath
-        $BackupFiles = Get-ChildItem -Path "$ParentPath\$LocalCachePath*.bak"
-        if ($BackupFiles.Count -gt 10) {
-            $FilesToRemove = $BackupFiles | Sort-Object -Property CreationTime | Select-Object -First ($BackupFiles.Count - 10)
-            $FilesToRemove | Remove-Item -Force -ErrorAction SilentlyContinue
+        if (-not [string]::IsNullOrWhiteSpace($LocalCachePath)) {
+            $ParentPath = [System.IO.Path]::GetDirectoryName($LocalCachePath)
+            $FileName   = [System.IO.Path]::GetFileName($LocalCachePath)
+
+            if (-not [string]::IsNullOrWhiteSpace($ParentPath) -and (Test-Path -LiteralPath $ParentPath)) {
+                $BackupFiles = Get-ChildItem -LiteralPath $ParentPath -Filter "$FileName*.bak" -File -ErrorAction SilentlyContinue
+                if (@($BackupFiles).Count -gt 10) {
+                    $FilesToRemove = $BackupFiles | Sort-Object -Property CreationTime | Select-Object -First (@($BackupFiles).Count - 10)
+                    $FilesToRemove | Remove-Item -Force -ErrorAction SilentlyContinue
+                }
+            }
         }
     }
 }

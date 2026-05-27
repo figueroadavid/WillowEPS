@@ -10,12 +10,6 @@ function Confirm-WEPSPrinterPort {
         Defaults to the local computer.
     .PARAMETER PortName
         The name of the printer port to check.
-    .EXAMPLE
-        Confirm-WEPSPrinterPort -ComputerName "PRINTSERVER01" -PortName "PRN-01-LPR"
-        Returns $true if the port exists.
-    .EXAMPLE
-        Confirm-WEPSPrinterPort -ComputerName "PRINTSERVER01" -PortName "IP_192.0.2.10"
-        Returns $false if the port does not exist.
     #>
 
     [CmdletBinding()]
@@ -31,7 +25,12 @@ function Confirm-WEPSPrinterPort {
         $null = Get-PrinterPort -ComputerName $ComputerName -Name $PortName -ErrorAction Stop
         return $true
     }
-    catch {
+    catch [Microsoft.Management.Infrastructure.CimException] {
+        # Expected case: port does not exist
         return $false
+    }
+    catch {
+        # Unexpected failure → propagate
+        throw "Failed to query printer port '$PortName' on '$ComputerName'. Error: $($_.Exception.Message)"
     }
 }

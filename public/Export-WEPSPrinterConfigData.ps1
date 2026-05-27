@@ -1,24 +1,4 @@
 function Export-WEPSPrinterConfigData {
-    <#
-    .SYNOPSIS
-        Exports print driver data for a specified printer.
-    .DESCRIPTION
-        Uses rundll32.exe to export print driver data for a specified printer.
-        Outputs the driver name used by the printer.
-    .PARAMETER PrinterName
-        The name of the printer.
-    .PARAMETER FileName
-        The output .dat file path.
-     .NOTES
-        The script requires the printmanagement module to be installed and the user to have administrative privileges.
-        The script specifically uses the 'd' and 'g' options in the rundll32.exe command to ensure that the both
-        the machine and user-specific settings are exported.
-        In the case of a Zebra printer, it is critical that the script be run as the service account used to run the print services.
-    .LINK
-        https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/rundll32-printui
-	.EXAMPLE
-        Export-WEPSPrinterConfigData -PrinterName "PRN-01" -FileName "PRN-01.dat"
-    #>
 
     [CmdletBinding()]    
     param(
@@ -29,27 +9,51 @@ function Export-WEPSPrinterConfigData {
         [string]$FileName = (Convert-ToValidFileName -Text $PrinterName -Extension '.dat')
     )
 
-    $FileName = '"{0}"' -f $PSCmdlet.GetUnresolvedProviderPathFromPSPath($FileName)
+    # --- Resolve file path (DO NOT pre-quote) ---
+    $ResolvedFileName = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($FileName)
 
-    $rundllPath = Join-Path $env:SystemRoot 'System32\rundll32.exe'
-
-    $ProcStartinfo = New-Object System.Diagnostics.ProcessStartInfo
-    $ProcStartinfo.FileName = $rundllPath
-    $ProcStartinfo.Arguments = "printui.dll,PrintUIEntry /Ss /n $PrinterName /a $FileName g u"
-    $ProcStartinfo.UseShellExecute = $false
-    $ProcStartinfo.RedirectStandardOutput = $true
-    $ProcStartinfo.RedirectStandardError = $true
-    $ProcStartinfo.CreateNoWindow = $true
-    $ProcStartinfo.Verb = "runas"
-   
-    $process = [System.Diagnostics.Process]::Start($ProcStartinfo)
-    $process.WaitForExit()
-
-    if ($process.ExitCode -ne 0) {
-        Write-Error "Failed to export print driver data for printer '$PrinterName'. Exit code: $($process.ExitCode)"
+    # --- Validate printer exists first ---
+    try {
+        $printer = Get-Printer -Name $PrinterName -ErrorAction Stop
     }
-    else {
-        $DriverName = (Get-Printer -Name $PrinterName).DriverName
-        'Successfully exported print driver data for printer "{0}" to file {1}; using driver "{2}".' -f $PrinterName, $FileName, $DriverName
+    catch {
+        throw "Printer '$PrinterName' not found. Cannot export configuration."
     }
+
+    $DriverName = $printer.DriverName
+
+    # --- Build rundll32 path (no Join-Path) ---
+    $rundllPath = [System.IO.Path]::Combine($env:SystemRoot, 'System32', 'rundll32.exe')
+
+    # --- Build argument string (quote only here) ---
+    $ArgString = 'printui.dll,PrintUIEntry /Ss /n "{0}" /a "{1}" g u' -f $PrinterName, $ResolvedFileName
+
+    $ProcStartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $ProcStartInfo.FileName               = $rundllPath
+    $ProcStartInfo.Arguments              = $ArgString
+    $ProcStartInfo.UseShellExecute        = $false
+    $ProcStartInfo.RedirectStandardOutput = $true
+    $ProcStartInfo.RedirectStandardError  = $true
+    $ProcStartInfo.CreateNoWindow         = $true
+    $ProcStartInfo.Verb                   = 'RunAs'
+
+    $Process = [System.Diagnostics.Process]::new()
+    $Process.StartInfo = $ProcStartInfo
+
+    $null = $Process.Start()
+    $Process.WaitForExit()
+
+    if ($Process.ExitCode -ne 0) {
+        $errorText = $Process.StandardError.ReadToEnd()
+        if (-not $errorText) {
+            $errorText = 'No additional error output returned.'
+        }
+
+        Write-Error "Failed to export print driver data for printer '$PrinterName'. ExitCode=$($Process.ExitCode). $errorText"
+        return
+    }
+
+    Write-Verbose ('Successfully exported print driver data for printer "{0}" to file "{1}" using driver "{2}".' -f $PrinterName, $ResolvedFileName, $DriverName)
+
+    "Successfully exported print driver data for printer '{0}' to file '{1}'; using driver '{2}'." -f $PrinterName, $ResolvedFileName, $DriverName
 }

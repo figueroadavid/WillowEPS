@@ -18,52 +18,53 @@ function Remove-WEPSPrinterPort {
         associated with that account.
     .EXAMPLE
         PS C:\> Remove-WEPSPrinterPort -PortName IP_192.0.2.10 -Environments PRD
-       
+
         Removes the printer port named IP_192.0.2.10 from the PRD Willow EPS print servers.
     .EXAMPLE
         PS C:\> Remove-WEPSPrinterPort -PortName IP_192.0.2.11 -Environments PRD,TST
-       
+
         Removes the printer port named IP_192.0.2.11 from both the PRD and TST Willow EPS print servers.
     #>
-   
-    [cmdletbinding(SupportsShouldProcess)]
+
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string]$PortName,
 
-        [parameter(ValueFromPipelineByPropertyName)]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string[]]$Environments
     )
 
     begin {
-        if (-not $script:ServerListData) {
+        if ($null -eq $script:ServerListData) {
             throw 'ServerList.json data is not loaded. Unable to determine target environments.'
         }
 
-        $TargetServers        = [System.Collections.Generic.List[string]]::new()
-        $SelectedEnvironments = [System.Collections.Generic.List[string]]::new()
+        $TargetServers         = [System.Collections.Generic.List[string]]::new()
+        $SelectedEnvironments  = [System.Collections.Generic.List[string]]::new()
         $AvailableEnvironments = @($script:AvailableEnvironments)
 
-        if (-not $AvailableEnvironments -or $AvailableEnvironments.Count -eq 0) {
+        if (@($AvailableEnvironments).Count -eq 0) {
             $AvailableEnvironments = @(
                 $script:ServerListData.PSObject.Properties.Name |
                 Sort-Object
             )
         }
 
-        # Resolve environments based on current user
+        $currentUser = $env:USERNAME
+
         foreach ($environmentName in $AvailableEnvironments) {
             $environmentConfig = $script:ServerListData.$environmentName
-            if ($null -ne $environmentConfig -and $environmentConfig.Account -eq $env:USERNAME) {
+
+            if ($null -ne $environmentConfig -and $environmentConfig.Account -eq $currentUser) {
                 if ($SelectedEnvironments -notcontains $environmentName) {
                     $null = $SelectedEnvironments.Add($environmentName)
                 }
             }
         }
 
-        # If no automatic mapping, use parameter
         if ($SelectedEnvironments.Count -eq 0) {
-            if (-not $Environments -or $Environments.Count -eq 0) {
+            if (-not $Environments -or @($Environments).Count -eq 0) {
                 Write-Warning ('You must specify -Environments. Available environments: {0}' -f ($AvailableEnvironments -join ', '))
                 return
             }
@@ -84,23 +85,23 @@ function Remove-WEPSPrinterPort {
                 return
             }
 
-            $Message = 'The current user {0} will be used to remove printer port(s) from the following Willow EPS environments: {1}' -f $env:USERNAME, ($SelectedEnvironments -join ', ')
-            Write-Verbose -Message $Message
+            Write-Verbose ('The current user {0} will be used to remove printer port(s) from the following Willow EPS environments: {1}' -f $currentUser, ($SelectedEnvironments -join ', '))
         }
         else {
-            $Message = 'The current user {0} is mapped to the following Willow EPS environments and those targets will be used: {1}' -f $env:USERNAME, ($SelectedEnvironments -join ', ')
-            Write-Verbose -Message $Message
+            Write-Verbose ('The current user {0} is mapped to the following Willow EPS environments and those targets will be used: {1}' -f $currentUser, ($SelectedEnvironments -join ', '))
         }
 
-        # Resolve target servers
         foreach ($environmentName in $SelectedEnvironments) {
-            $environmentConfig = $script:ServerListData.$environmentName
+            if (-not ($script:ServerListData.PSObject.Properties.Name -contains $environmentName)) {
+                continue
+            }
 
+            $environmentConfig = $script:ServerListData.$environmentName
             if ($null -eq $environmentConfig -or $null -eq $environmentConfig.Servers) {
                 continue
             }
 
-            foreach ($server in $environmentConfig.Servers) {
+            foreach ($server in @($environmentConfig.Servers)) {
                 if ($TargetServers -notcontains $server) {
                     $null = $TargetServers.Add($server)
                 }
@@ -115,22 +116,30 @@ function Remove-WEPSPrinterPort {
 
     process {
         foreach ($server in $TargetServers) {
-            if ($PSCmdlet.ShouldProcess("Remove printer port $PortName on $server")) {
-                try {
-                    $null = Get-PrinterPort -Name $PortName -ComputerName $server -ErrorAction SilentlyContinue
-                }
-                catch {
-                    Write-Error "The port '$PortName' does not exist on the server '$server', or the server is unavailable. Error: $_"
-                    continue
-                }
+            if (-not $PSCmdlet.ShouldProcess($server, "Remove printer port '$PortName'")) {
+                continue
+            }
 
-                try {
-                    Remove-PrinterPort -Name $PortName -ComputerName $server -ErrorAction Stop
-                    Write-Verbose "Port '$PortName' removed from server '$server'."
-                }
-                catch {
-                    Write-Warning -Message "Failed to remove port '$PortName' from server '$server'. Error: $_"
-                }
+            $portExists = $false
+            try {
+                $portExists = Confirm-WEPSPrinterPort -ComputerName $server -PortName $PortName
+            }
+            catch {
+                Write-Error "Failed to determine whether port '$PortName' exists on server '$server'. Error: $_"
+                continue
+            }
+
+            if (-not $portExists) {
+                Write-Warning "Port '$PortName' does not exist on server '$server'. Skipping."
+                continue
+            }
+
+            try {
+                Remove-PrinterPort -Name $PortName -ComputerName $server -ErrorAction Stop
+                Write-Verbose "Port '$PortName' removed from server '$server'."
+            }
+            catch {
+                Write-Warning "Failed to remove port '$PortName' from server '$server'. Error: $_"
             }
         }
     }

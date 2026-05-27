@@ -1,33 +1,23 @@
 function Remove-WEPSPrinter {
     <#
-        .SYNOPSIS
-            The script removes printer(s) from specified Willow EPS print servers.
-        .DESCRIPTION
-            Based on the user running the script, it will remove a given printer from the
-            environments associated with the current account, or from the environments
-            explicitly specified with -Environments.
-        .PARAMETER PrinterName
-            The name of the printer(s) to be removed.
-        .PARAMETER Environments
-            One or more environment names from ServerList.json.
-            If the current user matches an Account entry in ServerList.json, those
-            mapped environments are used automatically and this parameter is ignored.
-        .NOTES
-            Ensure you have the necessary permissions to remove printers on the target print servers.
-            If the script is run under one of the configured service accounts, it will only remove
-            printers from the servers associated with that account.
-        .EXAMPLE
-            PS C:\> Remove-WEPSPrinter -PrinterName PRN-01, PRN-02 -Environments PRD
-
-            Removes printers named PRN-01 and PRN-02 from the PRD Willow EPS print servers.
-        .EXAMPLE
-            PS C:\> Remove-WEPSPrinter -PrinterName PRN-03 -Environments PRD,TST
-            Removes a printer named PRN-03 from the PRD and TST Willow EPS print servers.
+    .SYNOPSIS
+        Removes printer(s) from specified Willow EPS print servers.
+    .DESCRIPTION
+        Based on the user running the script, it will remove a given printer from the
+        environments associated with the current account, or from the environments
+        explicitly specified with -Environments.
+    .PARAMETER PrinterName
+        The name of the printer(s) to be removed.
+    .PARAMETER Environments
+        One or more environment names from ServerList.json.
+        If the current user matches an Account entry in ServerList.json, those
+        mapped environments are used automatically and this parameter is ignored.
     #>
 
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Alias('Name')]
         [string[]]$PrinterName,
 
         [Parameter(ValueFromPipelineByPropertyName)]
@@ -39,13 +29,23 @@ function Remove-WEPSPrinter {
             throw 'ServerList.json data is not loaded. Unable to determine target environments.'
         }
 
-        $TargetServers = [System.Collections.Generic.List[string]]::new()
-        $SelectedEnvironments = [System.Collections.Generic.List[string]]::new()
+        $TargetServers         = [System.Collections.Generic.List[string]]::new()
+        $SelectedEnvironments  = [System.Collections.Generic.List[string]]::new()
         $AvailableEnvironments = @($script:AvailableEnvironments)
+
+        if (@($AvailableEnvironments).Count -eq 0) {
+            $AvailableEnvironments = @(
+                $script:ServerListData.PSObject.Properties.Name |
+                Sort-Object
+            )
+        }
+
+        $currentUser = $env:USERNAME
 
         foreach ($environmentName in $AvailableEnvironments) {
             $environmentConfig = $script:ServerListData.$environmentName
-            if ($null -ne $environmentConfig -and $environmentConfig.Account -eq $env:USERNAME) {
+
+            if ($null -ne $environmentConfig -and $environmentConfig.Account -eq $currentUser) {
                 if ($SelectedEnvironments -notcontains $environmentName) {
                     $null = $SelectedEnvironments.Add($environmentName)
                 }
@@ -53,7 +53,7 @@ function Remove-WEPSPrinter {
         }
 
         if ($SelectedEnvironments.Count -eq 0) {
-            if (-not $Environments -or $Environments.Count -eq 0) {
+            if (-not $Environments -or @($Environments).Count -eq 0) {
                 Write-Warning ('You must specify -Environments. Available environments: {0}' -f ($AvailableEnvironments -join ', '))
                 return
             }
@@ -74,21 +74,24 @@ function Remove-WEPSPrinter {
                 return
             }
 
-            $Message = 'The current user {0} will be used to remove printer(s) from the following Willow EPS environments in a single operation: {1}' -f $env:USERNAME, ($SelectedEnvironments -join ', ')
-            Write-Verbose -Message $Message
+            Write-Verbose ('The current user {0} will remove printers from: {1}' -f $currentUser, ($SelectedEnvironments -join ', '))
         }
         else {
-            $Message = 'The current user {0} is mapped to the following Willow EPS environments and those targets will be used: {1}' -f $env:USERNAME, ($SelectedEnvironments -join ', ')
-            Write-Verbose -Message $Message
+            Write-Verbose ('User {0} mapped environments: {1}' -f $currentUser, ($SelectedEnvironments -join ', '))
         }
 
         foreach ($environmentName in $SelectedEnvironments) {
+            if (-not ($script:ServerListData.PSObject.Properties.Name -contains $environmentName)) {
+                continue
+            }
+
             $environmentConfig = $script:ServerListData.$environmentName
+
             if ($null -eq $environmentConfig -or $null -eq $environmentConfig.Servers) {
                 continue
             }
 
-            foreach ($server in $environmentConfig.Servers) {
+            foreach ($server in @($environmentConfig.Servers)) {
                 if ($TargetServers -notcontains $server) {
                     $null = $TargetServers.Add($server)
                 }
@@ -103,16 +106,31 @@ function Remove-WEPSPrinter {
 
     process {
         foreach ($server in $TargetServers) {
-            $PSMessage = 'Remove printer(s) [{0}] on {1}' -f ($PrinterName -join ','), $server
-            if ($PSCmdlet.ShouldProcess($PSMessage, '', '')) {
-                foreach ($printer in $PrinterName) {
-                    try {
-                        Remove-Printer -Name $printer -ComputerName $server -ErrorAction Stop
-                        Write-Verbose -Message ('Printer "{0}" removed from computer "{1}".' -f $printer, $server)
+            foreach ($printer in $PrinterName) {
+
+                if (-not $PSCmdlet.ShouldProcess($server, "Remove printer '$printer'")) {
+                    continue
+                }
+
+                try {
+                    $existingPrinter = Get-Printer -ComputerName $server -Name $printer -ErrorAction SilentlyContinue
+
+                    if ($null -eq $existingPrinter) {
+                        Write-Verbose "Printer '$printer' does not exist on server '$server'. Skipping."
+                        continue
                     }
-                    catch {
-                        Write-Warning -Message ('Failed to remove printer(s) [{0}] from computer "{1}": {2}' -f ($PrinterName -join ','), $server, $_)
-                    }
+                }
+                catch {
+                    Write-Error "Failed to query printer '$printer' on server '$server'. Error: $_"
+                    continue
+                }
+
+                try {
+                    Remove-Printer -Name $printer -ComputerName $server -ErrorAction Stop
+                    Write-Verbose ('Printer "{0}" removed from server "{1}".' -f $printer, $server)
+                }
+                catch {
+                    Write-Warning ('Failed to remove printer "{0}" from server "{1}": {2}' -f $printer, $server, $_.Exception.Message)
                 }
             }
         }

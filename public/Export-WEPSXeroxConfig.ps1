@@ -2,27 +2,78 @@ function Export-WEPSXeroxConfig {
     <#
     .SYNOPSIS
         Exports a subset of registry values for a given printer.
+
     .DESCRIPTION
         Exports a defined allow-list of registry values for a printer driver
-        configuration into a JSON file. This can be used for configuration
-        replication using a companion import function.
-    .NOTES
-        The exported data is written to a JSON file and may include binary
-        values encoded as Base64.
-		
-		The script was designed to help replicate specific features of a Xerox printer that uses the 
-		Xerox Global Print Driver PCL6, particularly the stapling feature, which is controlled 
-		by a specific set of registry values.  It has not been tested against other printers or drivers 
-		not using the 5591.900.0.0 version of the driver. If used with other drivers or versions, 
-		proceed with caution at your own risk.
-    .EXAMPLE
-        Export-WEPSXeroxConfig -PrinterName "PRN-01" -FilePath "C:\Temp\PrinterConfig.json"
+        configuration into a JSON file. This output can be used to replicate
+        configuration settings using a companion import function.
+
+        The exported data is written to a JSON file and may include values
+        of type REG_BINARY. Binary values are intentionally replaced with
+        placeholder text ('<BINARY_DATA_REDACTED>') instead of being serialized.
+
+        This function is primarily designed for use with the Xerox Global Print Driver
+        (PCL6), v5591.900.0.0 particularly for capturing configuration elements such as stapling
+        and tray mappings that are stored in registry-backed structures.
+
+        The function targets the following registry paths:
+            HKLM\SYSTEM\CurrentControlSet\Control\Print\Printers\<PrinterName>\
+            HKLM\SYSTEM\CurrentControlSet\Control\Print\Printers\<PrinterName>\DSDriver\
+            HKLM\SYSTEM\CurrentControlSet\Control\Print\Printers\<PrinterName>\PrinterDriverData\
+
+        Only specific allow-listed values are exported.
+
+        The script has not been tested with non-Xerox drivers, and behavior with other drivers
+        or other driver versions is not guaranteed.
+
     .PARAMETER PrinterName
         The name of the printer to export configuration from.
+        This must match a valid printer installed on the system.
+
     .PARAMETER FilePath
-        The destination JSON file path.
+        The output file path for the JSON export.
+        If the file extension is not '.json', it will be automatically appended.
+
     .PARAMETER Force
         Overwrites the destination file if it already exists.
+        If not specified and the file exists, the operation will be skipped.
+
+    .NOTES
+        Designed primarily for Xerox Global Print Driver (PCL6) environments.
+
+        This function was originally created to capture registry-backed configuration
+        for Xerox printer features (such as stapling) that are not easily replicated
+        through standard PrintUI or GPO methods.
+
+        Behavior outside of Xerox GPD (e.g., other vendors or driver versions)
+        is not guaranteed and should be validated before use.
+
+        Binary registry values are not exported directly to avoid JSON serialization issues.
+
+    .EXAMPLE
+        Export-WEPSXeroxConfig -PrinterName "PRN-01" -FilePath "C:\Temp\PRN-01.json"
+
+        Exports the Xerox-specific registry configuration for printer PRN-01
+        into C:\Temp\PRN-01.json.
+
+    .EXAMPLE
+        Export-WEPSXeroxConfig -PrinterName "PRN-02" -FilePath "C:\Temp\PRN-02" -Verbose
+
+        Exports the configuration for PRN-02 and automatically appends ".json"
+        to the output file name (resulting in PRN-02.json).
+
+    .EXAMPLE
+        Export-WEPSXeroxConfig -PrinterName "PRN-03" -FilePath "C:\Temp\PRN-03.json" -Force
+
+        Overwrites the existing export file for PRN-03 without prompting.
+
+    .EXAMPLE
+        Get-Printer -Name "PRN-*" | ForEach-Object {
+            Export-WEPSXeroxConfig -PrinterName $_.Name -FilePath ("C:\Temp\{0}.json" -f $_.Name)
+        }
+
+        Iterates over multiple printers and exports each configuration to a separate JSON file.
+        This function processes one printer per invocation and does not support bulk export natively.
     #>
 
     [CmdletBinding()]

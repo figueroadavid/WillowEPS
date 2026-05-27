@@ -31,6 +31,7 @@ function Add-WEPSPrinter {
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Alias('Name')]
         [string]$PrinterName,
 
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
@@ -48,27 +49,29 @@ function Add-WEPSPrinter {
     )
 
     begin {
-        $driverNames =
-            if ($script:DriverConfigInfo.Drivers) {
-                $script:DriverConfigInfo.Drivers.Name
-            }
-            else {
-                @()
-            }
+        if (
+            ($null -eq $script:DriverConfigInfo) -or
+            (-not ($script:DriverConfigInfo.PSObject.Properties.Name -contains 'Drivers')) -or
+            ($null -eq $script:DriverConfigInfo.Drivers)
+        ) {
+            throw 'Driver configuration data is not loaded or is not in the expected wrapper format.'
+        }
+
+        $driverNames = @($script:DriverConfigInfo.Drivers.Name)
 
         if ($DriverName -notin $driverNames) {
             throw ('The specified driver "{0}" is not found in the driver configuration data. The current list of drivers is:{1}{2}' -f $DriverName, $script:CRLF, ($driverNames -join $script:CRLF))
         }
 
-        if (-not $script:ServerListData) {
+        if ($null -eq $script:ServerListData) {
             throw 'ServerList.json data is not loaded. Unable to determine target environments.'
         }
 
-        $TargetServers = [System.Collections.Generic.List[string]]::new()
-        $SelectedEnvironments = [System.Collections.Generic.List[string]]::new()
+        $TargetServers         = [System.Collections.Generic.List[string]]::new()
+        $SelectedEnvironments  = [System.Collections.Generic.List[string]]::new()
         $AvailableEnvironments = @($script:AvailableEnvironments)
 
-        if (-not $AvailableEnvironments -or $AvailableEnvironments.Count -eq 0) {
+        if (@($AvailableEnvironments).Count -eq 0) {
             $AvailableEnvironments = @(
                 $script:ServerListData.PSObject.Properties.Name |
                 Sort-Object
@@ -79,6 +82,7 @@ function Add-WEPSPrinter {
 
         foreach ($environmentName in $AvailableEnvironments) {
             $environmentConfig = $script:ServerListData.$environmentName
+
             if ($null -ne $environmentConfig -and $environmentConfig.Account -eq $currentUser) {
                 if ($SelectedEnvironments -notcontains $environmentName) {
                     $null = $SelectedEnvironments.Add($environmentName)
@@ -87,7 +91,7 @@ function Add-WEPSPrinter {
         }
 
         if ($SelectedEnvironments.Count -eq 0) {
-            if (-not $Environments -or $Environments.Count -eq 0) {
+            if (-not $Environments -or @($Environments).Count -eq 0) {
                 Write-Warning ('At least one target environment must be specified. Available environments: {0}' -f ($AvailableEnvironments -join ', '))
                 return
             }
@@ -102,6 +106,16 @@ function Add-WEPSPrinter {
                     $null = $SelectedEnvironments.Add($environmentName)
                 }
             }
+
+            if ($SelectedEnvironments.Count -eq 0) {
+                Write-Warning ('No valid environments were resolved. Available environments: {0}' -f ($AvailableEnvironments -join ', '))
+                return
+            }
+
+            Write-Verbose ('The current user {0} will target the following Willow EPS environments: {1}' -f $currentUser, ($SelectedEnvironments -join ', '))
+        }
+        else {
+            Write-Verbose ('The current user {0} is mapped to the following Willow EPS environments and those targets will be used: {1}' -f $currentUser, ($SelectedEnvironments -join ', '))
         }
 
         foreach ($environmentName in $SelectedEnvironments) {
@@ -114,7 +128,7 @@ function Add-WEPSPrinter {
                 continue
             }
 
-            foreach ($server in $environmentConfig.Servers) {
+            foreach ($server in @($environmentConfig.Servers)) {
                 if ($TargetServers -notcontains $server) {
                     $null = $TargetServers.Add($server)
                 }
@@ -126,72 +140,82 @@ function Add-WEPSPrinter {
             return
         }
 
-        if ($RemotePrinterName) {
+        if (-not [string]::IsNullOrWhiteSpace($RemotePrinterName)) {
             $LocalPrinterName = $PrinterName
-            $PortName = '{0}-LPR' -f $LocalPrinterName
+            $PortName         = '{0}-LPR' -f $LocalPrinterName
         }
         else {
-            $PortName = 'IP_{0}' -f $IPAddress
+            $LocalPrinterName = $PrinterName
+            $PortName         = 'IP_{0}' -f $IPAddress
         }
-
-        $BadServers = [System.Collections.Generic.List[string]]::new()
     }
 
     process {
         foreach ($server in $TargetServers) {
-            if ($PSCmdlet.ShouldProcess($server, "Configure printer '$PrinterName'")) {
+            if (-not $PSCmdlet.ShouldProcess($server, "Configure printer '$PrinterName'")) {
+                continue
+            }
+
+            $portExists = $false
+            try {
                 $portExists = Confirm-WEPSPrinterPort -ComputerName $server -PortName $PortName
+            }
+            catch {
+                Write-Error "Failed to determine whether port '$PortName' exists on server '$server'. Error: $_"
+                continue
+            }
 
-                if ($portExists) {
-                    Write-Verbose "Port '$PortName' already exists on server '$server'."
-                }
-                else {
-                    if (-not $RemotePrinterName) {
-                        $AddPortParams = @{
-                            ComputerName = $server
-                            IPAddress    = $IPAddress
-                        }
-                    }
-                    else {
-                        $AddPortParams = @{
-                            ComputerName      = $server
-                            LocalPrinterName  = $LocalPrinterName
-                            IPAddress         = $IPAddress
-                            RemotePrinterName = $RemotePrinterName
-                        }
-                    }
-
-                    try {
-                        Add-WEPSPrinterPort @AddPortParams -Verbose -ErrorAction Stop
-                        Write-Verbose "Successfully created port '$PortName' on server '$server'."
-                    }
-                    catch {
-                        Write-Error "Failed to create port '$PortName' on server '$server'. Error: $_"
-                        $null = $BadServers.Add($server)
-                        continue
-                    }
-                }
-
-                if ($BadServers -notcontains $server) {
-                    try {
-                        $existingPrinter = Get-Printer -ComputerName $server -Name $PrinterName -ErrorAction SilentlyContinue
-                        if ($null -ne $existingPrinter) {
-                            Write-Verbose "Printer '$PrinterName' already exists on server '$server'. Skipping."
-                            continue
-                        }
-
-                        if ($PSCmdlet.ShouldProcess($server, "Add printer '$PrinterName'")) {
-                            Add-Printer -ComputerName $server -Name $PrinterName -DriverName $DriverName -PortName $PortName -ErrorAction Stop
-                            Write-Verbose "Successfully added printer '$PrinterName' on server '$server'."
-                        }
-                    }
-                    catch {
-                        Write-Error "Failed to add printer '$PrinterName' on server '$server'. Error: $_"
+            if ($portExists) {
+                Write-Verbose "Port '$PortName' already exists on server '$server'."
+            }
+            else {
+                if ([string]::IsNullOrWhiteSpace($RemotePrinterName)) {
+                    $AddPortParams = @{
+                        ComputerName = $server
+                        IPAddress    = $IPAddress
                     }
                 }
                 else {
-                    Write-Warning "Skipping printer addition on server '$server' due to previous port creation issues."
+                    $AddPortParams = @{
+                        ComputerName      = $server
+                        LocalPrinterName  = $LocalPrinterName
+                        IPAddress         = $IPAddress
+                        RemotePrinterName = $RemotePrinterName
+                    }
                 }
+
+                try {
+                    Add-WEPSPrinterPort @AddPortParams -ErrorAction Stop
+                    Write-Verbose "Successfully created port '$PortName' on server '$server'."
+                }
+                catch {
+                    Write-Error "Failed to create port '$PortName' on server '$server'. Error: $_"
+                    continue
+                }
+            }
+
+            try {
+                $existingPrinter = Get-Printer -ComputerName $server -Name $PrinterName -ErrorAction SilentlyContinue
+                if ($null -ne $existingPrinter) {
+                    Write-Verbose "Printer '$PrinterName' already exists on server '$server'. Skipping."
+                    continue
+                }
+            }
+            catch {
+                Write-Error "Failed to query printer '$PrinterName' on server '$server'. Error: $_"
+                continue
+            }
+
+            if (-not $PSCmdlet.ShouldProcess($server, "Add printer '$PrinterName'")) {
+                continue
+            }
+
+            try {
+                Add-Printer -ComputerName $server -Name $PrinterName -DriverName $DriverName -PortName $PortName -ErrorAction Stop
+                Write-Verbose "Successfully added printer '$PrinterName' on server '$server'."
+            }
+            catch {
+                Write-Error "Failed to add printer '$PrinterName' on server '$server'. Error: $_"
             }
         }
     }

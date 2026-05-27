@@ -79,7 +79,7 @@ function Initialize-Module {
             if (-not ($script:DriverConfigInfo.PSObject.Properties.Name -contains 'Drivers')) {
                 $script:DriverConfigInfo = [PSCustomObject]@{
                     Metadata = $null
-                    Drivers = $script:DriverConfigInfo
+                    Drivers = @($script:DriverConfigInfo)
                 }
             }
         } catch {
