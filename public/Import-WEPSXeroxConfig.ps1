@@ -85,7 +85,63 @@ function Import-WEPSXeroxConfig {
         $results | Where-Object { -not $_.Success }
 
         Runs the import and filters for printers that failed.
+    .EXAMPLE
+        Import-WEPSXeroxConfig -PrinterName PRN-01,PRN-02 -FilePath C:\Temp\Xerox_with_Stapling_with_Horizontal.json -Verbose
+        VERBOSE: Performing the operation "Stop" on target "Spooler". 
+        VERBOSE: Performing the operation "Set 'xColor'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'xUPDCurrentModel'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'xCurrentProdUID'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'XrxDeviceSettings'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'NamedSettingsSupported'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'TrayFormTable'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'TrayFormMapSize'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'TrayFormMap'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'TrayFormKeywordSize'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'TrayFormKeyword'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'FontCart'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'AdminDevDefaults'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'AdminDocDefaults'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'printBinNames'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\DSDriver".
+        VERBOSE: Performing the operation "Set 'printColor'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\DSDriver".
+        VERBOSE: Performing the operation "Set 'printMediaSupported'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\DSDriver".
+        VERBOSE: Performing the operation "Set 'printMaxXExtent'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\DSDriver".
+        VERBOSE: Performing the operation "Set 'printMaxYExtent'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\DSDriver".
+        VERBOSE: Performing the operation "Set 'printMinXExtent'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\DSDriver".
+        VERBOSE: Performing the operation "Set 'printMinYExtent'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\DSDriver".
+        VERBOSE: Performing the operation "Set 'printRate'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\DSDriver".
+        VERBOSE: Performing the operation "Set 'printPagesPerMinute'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01\DSDriver".
+        VERBOSE: Performing the operation "Set 'Default DevMode'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-01".
+        VERBOSE: Import complete for 'PRN-01' 
+        VERBOSE: Performing the operation "Set 'xColor'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'xUPDCurrentModel'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'xCurrentProdUID'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'XrxDeviceSettings'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'NamedSettingsSupported'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'TrayFormTable'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'TrayFormMapSize'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'TrayFormMap'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'TrayFormKeywordSize'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'TrayFormKeyword'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'FontCart'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'AdminDevDefaults'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'AdminDocDefaults'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\PrinterDriverData".
+        VERBOSE: Performing the operation "Set 'printBinNames'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\DSDriver".
+        VERBOSE: Performing the operation "Set 'printColor'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\DSDriver".
+        VERBOSE: Performing the operation "Set 'printMediaSupported'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\DSDriver".
+        VERBOSE: Performing the operation "Set 'printMaxXExtent'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\DSDriver".
+        VERBOSE: Performing the operation "Set 'printMaxYExtent'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\DSDriver".
+        VERBOSE: Performing the operation "Set 'printMinXExtent'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\DSDriver".
+        VERBOSE: Performing the operation "Set 'printMinYExtent'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\DSDriver".
+        VERBOSE: Performing the operation "Set 'printRate'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\DSDriver".
+        VERBOSE: Performing the operation "Set 'printPagesPerMinute'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02\DSDriver".
+        VERBOSE: Performing the operation "Set 'Default DevMode'" on target "registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Printers\PRN-02".
+        VERBOSE: Import complete for 'PRN-02'
+        VERBOSE: Import process completed.
 
+        Printer  Success Errors
+        -------  ------- ------
+        PRN-01    	True
+        PRN-02   	True
     #>
 
     [CmdletBinding(SupportsShouldProcess = $true)]
@@ -145,11 +201,10 @@ function Import-WEPSXeroxConfig {
         $items = Get-Content -LiteralPath $FilePath -Raw | ConvertFrom-Json
         if ($items -isnot [System.Array]) { $items = @($items) }
 
-        $validatedPrinters = @()
     }
 
     process {
-        foreach ($printer in $PrinterName) {
+        $validatedPrinters = foreach ($printer in $PrinterName) {
             try {
                 $p = Get-Printer -Name $printer -ErrorAction Stop
 
@@ -157,8 +212,7 @@ function Import-WEPSXeroxConfig {
                     Write-Warning "Skipping '$printer' due to driver mismatch."
                     continue
                 }
-
-                $validatedPrinters += $p.Name
+                $p.Name
             }
             catch {
                 Write-Warning "Skipping '$printer' (not found)."
@@ -181,9 +235,8 @@ function Import-WEPSXeroxConfig {
             $spoolerStopped = $true
         }
 
-        foreach ($printer in $validatedPrinters) {
-
-            $errors = @()
+        $results = foreach ($printer in $validatedPrinters) {
+            $errors = [System.Collections.Generic.List[string]]::new()
             $success = $true
 
             try {
@@ -237,14 +290,14 @@ function Import-WEPSXeroxConfig {
             }
             catch {
                 $success = $false
-                $errors += $_.Exception.Message
+                $null = $errors.Add($_.Exception.Message)
                 Write-Warning "Import failed for '$printer': $($_.Exception.Message)"
             }
 
-            $results += [PSCustomObject]@{
+            [PSCustomObject]@{
                 Printer = $printer
                 Success = $success
-                Errors  = $errors
+                Errors  = $errors -join '; '
             }
         }
 

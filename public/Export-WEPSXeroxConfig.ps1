@@ -156,7 +156,7 @@ function Export-WEPSXeroxConfig {
 
                 $serialized =
                     if ($kind -eq 'Binary') {
-                        '<BINARY_DATA_REDACTED>'
+                        [Convert]::ToBase64String($data)
                     }
                     else {
                         $data
