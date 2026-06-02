@@ -31,13 +31,33 @@ Although designed for Epic Willow EPS environments, it can be used with any syst
 
 ## Repository Structure
 
-├── data/          # Data files or configuration references
-├── docs/          # Documentation assets
-├── private/       # Internal/private module components
-├── public/        # Exposed functions
-├── WillowEPS.psd1 # Module manifest
-├── WillowEPS.psm1 # Module implementation
-└── LICENSE
+
+```mermaid
+flowchart TD
+    Root[WillowEPS Repository]
+
+    Root --> Data[data/]
+    Root --> Docs[docs/]
+    Root --> Public[public/]
+    Root --> Private[private/]
+    Root --> PSD1[WillowEPS.psd1]
+    Root --> PSM1[WillowEPS.psm1]
+    Root --> License[LICENSE]
+
+    Data --> DataDesc[Configuration and data files]
+
+    Docs --> DocsDesc[Documentation and supporting material]
+
+    Public --> PublicDesc[Exported functions available to users]
+
+    Private --> PrivateDesc[Internal helper functions and logic]
+
+    PSD1 --> PSD1Desc[Module manifest and metadata]
+
+    PSM1 --> PSM1Desc[Core module implementation]
+
+    License --> LicenseDesc[Apache 2.0 license]
+```
 
 ---
 
