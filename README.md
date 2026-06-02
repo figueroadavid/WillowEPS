@@ -33,7 +33,7 @@ Although designed for Epic Willow EPS environments, it can be used with any syst
 
 
 ```mermaid
-flowchart TD
+flowchart LR
     Root[WillowEPS Repository]
 
     Root --> Data[data/]
