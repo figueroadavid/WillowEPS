@@ -12,7 +12,7 @@ The format of the file is this:
 		"Servers": [
 			"server01",
 			"server02"
-		]
+		],
 		"Account" : "accountname"
 	},
 	"environment2": {
@@ -20,12 +20,19 @@ The format of the file is this:
 			"server03",
 			"server04"
 		], 
-		"Account" : "accountname"
+		"Account" : "accountname2"
+	},
+	"environment3": {
+		"Servers": [
+			"server05",
+			"server06"
+		], 
+		"Account" : "accountname3"
 	}
 }
 ```	
 
-Each environment name/group gets it's own section, and then has a section for the associated servers, and the associated account (if any).  
+Each environment name/group gets its own section, and then has a section for the associated servers, and the associated account (if any).  
 
 If the current user has an account listed in this JSON file, the appropriate servers for all of those environments is added to the list of servers that will be managed.  If the user account is NOT listed in the JSON file, the user is presented with a powershell menu of environments to select, and the servers for the selected environments are added. 
 
@@ -45,45 +52,45 @@ This file contains entries for the printer drivers, their associated versions, t
   "Drivers": [
     {
 		"Name": "Microsoft XPS Document Writer v4",
-		"DriverVersion": 2814751477596161,
-		"DriverVersionString": "10.0.26100.1"
-		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft XPS Document Writer v4.dat"
-		"SHA256": "12345"
+		"DriverVersion": "2814751477596161",
+		"DriverVersionString": "10.0.26100.1",
+		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft XPS Document Writer v4.dat",
+		"SHA256": "A3F1C9...<64-hex>"
 	},
 	{
 		"Name": "Microsoft Virtual Print Class Driver",
-		"DriverVersion": 2814751477604196,
-		"DriverVersionString": "10.0.26100.8036"
-		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft Virtual Print Class Driver.dat"
-		"SHA256": "12345"
+		"DriverVersion": "2814751477604196",
+		"DriverVersionString": "10.0.26100.8036",
+		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft Virtual Print Class Driver.dat",
+		"SHA256": "A3F1C9...<64-hex>"
 	},
 	{
 		"Name": "Microsoft Print To PDF",
-		"DriverVersion": 2814751477600644,
-		"DriverVersionString": "10.0.26100.4484"
-		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft Print To PDF.dat"
-		"SHA256": "12345"
+		"DriverVersion": "2814751477600644",
+		"DriverVersionString": "10.0.26100.4484",
+		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft Print To PDF.dat",
+		"SHA256": "A3F1C9...<64-hex>"
 	},
 	{
 		"Name": "Microsoft IPP Class Driver",
-		"DriverVersion": 2814751477604196,
-		"DriverVersionString": "10.0.26100.8036"
-		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft IPP Class Driver.dat"
-		"SHA256": "12345"
+		"DriverVersion": "2814751477604196",
+		"DriverVersionString": "10.0.26100.8036",
+		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft IPP Class Driver.dat",
+		"SHA256": "A3F1C9...<64-hex>"
 	},
 	{
 		"Name": "Microsoft Shared Fax Driver",
-		"DriverVersion": 2814751477604196,
-		"DriverVersionString": "10.0.26100.8036"
-		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft Shared Fax Driver.dat"
-		"SHA256": "12345"
+		"DriverVersion": "2814751477604196",
+		"DriverVersionString": "10.0.26100.8036",
+		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft Shared Fax Driver.dat",
+		"SHA256": "A3F1C9...<64-hex>"
 	},
 	{
 		"Name": "Microsoft enhanced Point and Print compatibility driver",
-		"DriverVersion": 2814751477604196,
-		"DriverVersionString": "10.0.26100.8036"
-		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft enhanced Point and Print compatibility driver.dat"
-		"SHA256": "12345"
+		"DriverVersion": "2814751477604196",
+		"DriverVersionString": "10.0.26100.8036",
+		"DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Microsoft enhanced Point and Print compatibility driver.dat",
+		"SHA256": "A3F1C9...<64-hex>"
 	}
   ]
 }

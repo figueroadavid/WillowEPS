@@ -5,6 +5,18 @@ function Add-WEPSPrinterPort {
     .DESCRIPTION
         Checks whether a specified printer port exists on a target computer and
         creates it if it does not, using either LPR or standard TCP/IP configuration.
+    .PARAMETER ComputerName
+        The name of the target computer on which to check for and potentially create the printer port. Defaults to the local computer.
+    .PARAMETER LocalPrinterName 
+        The name of the local printer to associate with the port when using LPR configuration. Required if using the 'LPR' parameter set.
+    .PARAMETER RemotePrinterName
+        The name of the remote printer queue to associate with the port when using LPR configuration. Required if using the 'LPR' parameter set.
+    .PARAMETER IPAddress
+        The IP address of the printer port, and must be a valid IP address format.
+        If the port is a standard TCP/IP port, this is the address of the printer. If the port is an LPR port, 
+        this is the address of the LPD server.
+    .NOTES
+        Ensure you have the necessary permissions to create printer ports on the target system.
     #>
 
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Standard')]
@@ -27,7 +39,7 @@ function Add-WEPSPrinterPort {
     # --- Determine PortName ---
     switch ($PSCmdlet.ParameterSetName) {
         'LPR' {
-            $PortName = '{0}-LPR' -f $LocalPrinterName
+            $PortName = 'LPR-{0}' -f $LocalPrinterName
         }
         'Standard' {
             $PortName = 'IP_{0}' -f $IPAddress

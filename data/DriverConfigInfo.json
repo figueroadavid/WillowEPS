@@ -10,42 +10,42 @@
   "Drivers": [
     {
       "Name": "Generic PCL Driver",
-      "DriverVersion": 100000000000000,
+      "DriverVersion": "100000000000000",
       "DriverVersionString": "1.0.0.0",
       "DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Driver1.dat",
       "SHA256": "<HASH>"
     },
     {
       "Name": "Generic Receipt Printer Driver",
-      "DriverVersion": 200000000000000,
+      "DriverVersion": "200000000000000",
       "DriverVersionString": "2.0.0.0",
       "DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Driver2.dat",
       "SHA256": "<HASH>"
     },
     {
       "Name": "Generic Universal Print Driver",
-      "DriverVersion": 300000000000000,
+      "DriverVersion": "300000000000000",
       "DriverVersionString": "3.0.0.0",
       "DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Driver3.dat",
       "SHA256": "<HASH>"
     },
     {
       "Name": "Generic PostScript Driver",
-      "DriverVersion": 400000000000000,
+      "DriverVersion": "400000000000000",
       "DriverVersionString": "4.0.0.0",
       "DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Driver4.dat",
       "SHA256": "<HASH>"
     },
     {
       "Name": "Generic Network Print Driver",
-      "DriverVersion": 500000000000000,
+      "DriverVersion": "500000000000000",
       "DriverVersionString": "5.0.0.0",
       "DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Driver5.dat",
       "SHA256": "<HASH>"
     },
     {
       "Name": "Generic Label Printer Driver",
-      "DriverVersion": 600000000000000,
+      "DriverVersion": "600000000000000",
       "DriverVersionString": "6.0.0.0",
       "DATFilePath": "C:\\ProgramData\\WillowEPS\\Cache\\Data\\Driver6.dat",
       "SHA256": "<HASH>"
